@@ -1,6 +1,6 @@
 # Split parameters
 SPLIT_OUT="split-out"
-LINES_PER_FILE=400000
+LINES_PER_FILE=40000
 
 # aln parameters
 MAP_IM_OUT="map-intermediate-out"
@@ -43,7 +43,7 @@ rule aln:
     input: pairn=SPLIT_OUT + "/pair{pair_nr}.fastq.split.{id}", refbwt="ref.fa.bwt", ref="ref.fa"
     threads: 1
     params: out_dir=MAP_IM_OUT
-    output: MAP_IM_OUT + "/pair{pair_nr}.fastq.split.{id}.sai"
+    output: protected(MAP_IM_OUT + "/pair{pair_nr}.fastq.split.{id}.sai")
     shell: """
     mkdir -p {params.out_dir}
 	bwa aln -t {threads} {input.ref} -{wildcards.pair_nr} {input.pairn} > {output}
@@ -52,24 +52,17 @@ rule aln:
 rule sampe:
     input: sai1=MAP_IM_OUT + "/pair1.fastq.split.{id}.sai", sai2=MAP_IM_OUT + "/pair2.fastq.split.{id}.sai", pair1=SPLIT_OUT + "/pair1.fastq.split.{id}", pair2=SPLIT_OUT + "/pair2.fastq.split.{id}", refbwt="ref.fa.bwt", ref="ref.fa"
     params: out_dir=MAP_IM_OUT
-    output: MAP_IM_OUT + "/pair.fastq.split.{id}.sam"
+    output: protected(MAP_IM_OUT + "/pair.fastq.split.{id}.sam")
     shell: """
     mkdir -p {params.out_dir}
 	bwa sampe {input.ref} {input.sai1} {input.sai2} {input.pair1} {input.pair2} > {output}
     """
 
-rule fai:
-    input: "ref.fa"
-    output: "ref.fa.fai"
-    shell: """
-    samtools faidx {input}
-    """
-
 rule samtobam:
-    input: "{name}.sam", "ref.fa.fai"
+    input: "{name}.sam"
     output: "{name}.bam"
     shell: """
-    samtools view -bt {input[0]} {input[1]} > {output}
+    samtools view -bS {input} > {output}
     """
 
 rule merge:
@@ -82,4 +75,6 @@ rule merge:
     """
 
 rule clean:
-    shell: "rm -rf " + SPLIT_OUT
+    run:
+        shell("rm -rf " + " ".join([SPLIT_OUT, MAP_IM_OUT, MERGE_OUT]))
+        shell("rm -rf " + " ".join(expand("ref.fa.{ext}",ext=["bwt","pac","fai","sa","amb","ann"])))

@@ -1,0 +1,4 @@
+include: "../Snakefile"
+
+rule test:
+    input: MERGE_OUT + "/pair_ref.bam"
