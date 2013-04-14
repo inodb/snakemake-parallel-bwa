@@ -1,6 +1,8 @@
+
+
 # Split parameters
 SPLIT_OUT="split-out"
-LINES_PER_FILE=40000
+LINES_PER_FILE=os.environ.get("LINES_PER_FILE", "4000000")
 
 # aln parameters
 MAP_IM_OUT="map-intermediate-out"
@@ -41,7 +43,7 @@ rule bwt:
 
 rule aln:
     input: pairn=SPLIT_OUT + "/pair{pair_nr}.fastq.split.{id}", refbwt="ref.fa.bwt", ref="ref.fa"
-    threads: 1
+    threads: 8
     params: out_dir=MAP_IM_OUT
     output: protected(MAP_IM_OUT + "/pair{pair_nr}.fastq.split.{id}.sai")
     shell: """
