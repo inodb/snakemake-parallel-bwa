@@ -55,27 +55,27 @@ class SnakeJobSbatch(SnakeJob):
         """Schedules a snakemake job with sbatch and determines resource usage
         based on input files."""
         # create the output directory, so slurm output can go there
-        make_dir(os.path.dirname(os.path.abspath(self.ofiles[0])))
+        #make_dir(os.path.dirname(os.path.abspath(self.ofiles[0])))
 
         if self.rule == 'split1' or self.rule == 'split2' or self.rule == 'bwt':
             #hours = math.ceil(os.path.getsize(self.ifiles[0]) / float(500 * 1024 ** 2))
             minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=%s-slurm-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.ofiles[0], self.rule, self.scriptname)
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
         elif self.rule in ['aln', 'sort']:
             minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p node --qos=short -t 00:%i:00 --output=%s-slurm-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.ofiles[0], self.rule, self.scriptname)
+            sbatch_cmd = 'sbatch %s -A b2010008 -p node --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
         elif self.rule == 'sampe':
             minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=%s-slurm-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.ofiles[0], self.rule, self.scriptname)
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
         elif self.rule == 'samtobam':
             minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=%s-slurm-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.ofiles[0], self.rule, self.scriptname)
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
         elif self.rule == 'merge':
             minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=%s-slurm-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.ofiles[0], self.rule, self.scriptname)
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
         elif self.rule in ['removeduplicates', 'cleansam', 'index', 'coverage', 'mean_coverage_per_contig']:
             minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.ofiles[0], self.rule, self.scriptname)
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
         elif self.rule in ['split_all', 'clean', 'all', 'merge_all', 'test']:
             # no scheduling just run
             sbatch_cmd = 'bash %s' % (self.scriptname)
