@@ -19,7 +19,7 @@ separately.
 # Install
 * Change the path to the location of ``sbatch_job`` in  ``Snakefile-sbatch.py``
 * Change the location of Picard tools in ``Snakefile``.
-* Set the proper parameters in the schedule() class for your sbatch account and partition names
+* Set the proper parameters in the schedule() method for your sbatch account and partition names
 
 # Test
 ```
