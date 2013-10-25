@@ -1,6 +1,6 @@
 # Split parameters
 SPLIT_OUT="split-out"
-LINES_PER_FILE=os.environ.get("LINES_PER_FILE", "400000000")
+LINES_PER_FILE=os.environ.get("LINES_PER_FILE", "40000")
 
 # aln parameters
 MAP_IM_OUT="map-intermediate-out"

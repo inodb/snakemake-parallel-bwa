@@ -27,11 +27,11 @@ class SnakeJob:
         self.rule = fh.readline().split()[1]
         self.ifiles = fh.readline().split()[1:]
         self.ofiles = fh.readline().split()[1:]
-        if dependencies == None:
+        if dependencies == None or len(dependencies) < 1:
             self.dependencies = None
         else:
-            # expects snakemake like string
-            self.dependencies = dependencies.split(',')
+            # expects snakemake like list of numbers
+            self.dependencies = dependencies
             assert len(self.dependencies) >= 1
         fh.close()
 
@@ -44,6 +44,9 @@ class UndefinedJobRule(Exception):
 
 
 class SnakeJobSbatch(SnakeJob):
+    # Change this to the path of the sbatch_job wrapper script
+    sbatch_job_path = "~/bin/sbatch_job"
+
     def __init__(self, snakebashfile, dependencies=None):
         SnakeJob.__init__(self, snakebashfile, dependencies)
         if self.dependencies == None:
@@ -57,45 +60,49 @@ class SnakeJobSbatch(SnakeJob):
         # create the output directory, so slurm output can go there
         #make_dir(os.path.dirname(os.path.abspath(self.ofiles[0])))
 
+        run_locally = False
+
         if self.rule == 'split1' or self.rule == 'split2' or self.rule == 'bwt':
             #hours = math.ceil(os.path.getsize(self.ifiles[0]) / float(500 * 1024 ** 2))
-            minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
+            minutes = 10
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
         elif self.rule in ['aln', 'sort']:
-            minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p node --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
+            minutes = 10
+            sbatch_cmd = 'sbatch %s -A b2010008 -p node -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
         elif self.rule == 'sampe':
-            minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
+            minutes = 10
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
         elif self.rule == 'samtobam':
-            minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
+            minutes = 10
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
         elif self.rule == 'merge':
-            minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
+            minutes = 10
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
         elif self.rule in ['removeduplicates', 'cleansam', 'index', 'coverage', 'mean_coverage_per_contig']:
-            minutes = 15
-            sbatch_cmd = 'sbatch %s -A b2010008 -p core --qos=short -t 00:%i:00 --output=snakemake-%%j.out -J %s ~/bin/sbatch_job bash %s' % (self.dep_str, minutes, self.rule, self.scriptname)
+            minutes = 10
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
         elif self.rule in ['split_all', 'clean', 'all', 'merge_all', 'test']:
-            # no scheduling just run
-            sbatch_cmd = 'bash %s' % (self.scriptname)
+            minutes = 1
+            sbatch_cmd = 'sbatch %s -A b2010008 -p core -t 00:%i:00 --output=snakemake-%%j.out -J %s %s bash %s' % (self.dep_str, minutes, self.rule, self.sbatch_job_path, self.scriptname)
+            #sbatch_cmd = 'bash %s' % (self.scriptname)
+            #run_locally = True
         else:
             raise UndefinedJobRule('Undefined resource usage %s' % (self.rule))
             return 2
 
-        print(sbatch_cmd)
+        #print(sbatch_cmd)
         popenrv = subprocess.Popen(sbatch_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).communicate()
-        print("%i" % int(popenrv[0].split()[-1]))
+        #print(popenrv[0])
+        if not run_locally:
+            try:
+                print("%i" % int(popenrv[0].split()[-1]))
+            except ValueError:
+                print("Not a submitted job: %s" % popenrv[0])
+                sys.exit(2)
 
 
 if __name__ == '__main__':
-
-    if len(sys.argv) == 2:
-        sj = SnakeJobSbatch(sys.argv[1])
-    elif len(sys.argv) == 3:
-        sj = SnakeJobSbatch(sys.argv[1], sys.argv[2])
-    else:
-        raise Exception('Expected snakemake arguments, should max be 3')
+    sj = SnakeJobSbatch(sys.argv[-1], sys.argv[1:-1])
     try:
         sj.schedule()
     except UndefinedJobRule as err:
